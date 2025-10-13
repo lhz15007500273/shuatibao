@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="purple_200">#FFBB86FC</color>
+    <color name="purple_500">#FF6200EE</color>
+    <color name="purple_700">#FF3700B3</color>
+    <color name="teal_200">#FF03DAC5</color>
+    <color name="teal_700">#FF018786</color>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    <!-- Material 3 颜色系统 -->
+    <color name="on_surface">#1D1B20</color>
+    <color name="surface_variant">#E7E0EC</color>
+    <color name="on_surface_variant">#49454F</color>
+    <color name="primary_container">#EADDFF</color>
+    <color name="on_primary_container">#21005D</color>
+    <color name="secondary_container">#E8DEF8</color>
+    <color name="on_secondary_container">#1D192B</color>
+    <color name="outline">#79747E</color>
+    <!-- 新增现代化配色 -->
+    <color name="primary">#6366F1</color>
+    <color name="primary_light">#A5B4FC</color>
+    <color name="secondary">#EC4899</color>
+    <color name="background">#F8FAFC</color>
+    <color name="surface">#FFFFFF</color>
+    <color name="text_primary">#1E293B</color>
+    <color name="text_secondary">#64748B</color>
+    <color name="success">#10B981</color>
+    <color name="warning">#F59E0B</color>
+    <color name="error">#EF4444</color>
+    <!-- 蓝色科技风格 -->
+    <color name="blue_light_background">#F5F9FF</color>
+    <color name="blue_primary">#2196F3</color>
+    <color name="blue_dark_primary">#1976D2</color>
+    <color name="blue_light_accent">#E3F2FD</color>
+    <color name="blue_light_border">#BBDEFB</color>
+    <color name="blue_dark_text">#212121</color>
+    <color name="blue_light_text">#757575</color>
+    <color name="blue_success">#4CAF50</color>
+    <color name="blue_warning">#FF9800</color>
+    <color name="blue_error">#F44336</color>
+</resources>

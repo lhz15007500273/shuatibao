@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="8dp"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="2dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <!-- 题目类型 -->
+        <TextView
+            android:id="@+id/tv_question_type"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_type_tag"
+            android:paddingHorizontal="8dp"
+            android:paddingVertical="4dp"
+            android:text="单选题"
+            android:textColor="@color/white"
+            android:textSize="12sp" />
+
+        <!-- 题目内容 -->
+        <TextView
+            android:id="@+id/tv_question_content"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="题目内容..."
+            android:textColor="@color/text_primary"
+            android:textSize="14sp"
+            android:lineSpacingExtra="4dp" />
+
+        <!-- 正确答案 -->
+        <TextView
+            android:id="@+id/tv_correct_answer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="正确答案：A"
+            android:textColor="@color/success"
+            android:textSize="13sp"
+            android:textStyle="bold" />
+
+        <!-- 解析 -->
+        <TextView
+            android:id="@+id/tv_analysis"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="解析内容..."
+            android:textColor="@color/text_secondary"
+            android:textSize="13sp" />
+
+        <!-- 提示文字 -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="点击重做此题 • 长按删除"
+            android:textColor="@color/text_secondary"
+            android:textSize="12sp" />
+
+    </LinearLayout>
+
+</com.google.android.material.card.MaterialCardView>
