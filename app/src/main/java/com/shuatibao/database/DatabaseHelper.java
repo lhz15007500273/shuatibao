@@ -11,7 +11,9 @@ import com.shuatibao.model.ExamPaper;
 import com.shuatibao.model.Question;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String DATABASE_NAME = "question_bank.db";
@@ -95,9 +97,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         onCreate(db);
     }
 
-    // 在 DatabaseHelper.java 中确保以下方法正确实现
+    // 在 DatabaseHelper.java 中添加以下完整的方法
 
-    // 获取所有错题
+    // 获取所有错题（按错误时间降序排列）
     public List<Question> getAllWrongQuestions() {
         List<Question> wrongQuestions = new ArrayList<>();
         SQLiteDatabase db = this.getReadableDatabase();
@@ -108,22 +110,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
         if (cursor.moveToFirst()) {
             do {
-                Question question = new Question();
-                // 使用 getColumnIndex 而不是 getColumnIndexOrThrow 避免异常
-                int questionIdIndex = cursor.getColumnIndex(COLUMN_QUESTION_ID);
-                int typeIndex = cursor.getColumnIndex(COLUMN_TYPE);
-                int contentIndex = cursor.getColumnIndex(COLUMN_CONTENT);
-                int optionsIndex = cursor.getColumnIndex(COLUMN_OPTIONS);
-                int answersIndex = cursor.getColumnIndex(COLUMN_ANSWERS);
-                int analysisIndex = cursor.getColumnIndex(COLUMN_ANALYSIS);
-
-                if (questionIdIndex != -1) question.setId(cursor.getString(questionIdIndex));
-                if (typeIndex != -1) question.setType(cursor.getString(typeIndex));
-                if (contentIndex != -1) question.setContent(cursor.getString(contentIndex));
-                if (optionsIndex != -1) question.setOptions(stringToList(cursor.getString(optionsIndex)));
-                if (answersIndex != -1) question.setAnswers(stringToList(cursor.getString(answersIndex)));
-                if (analysisIndex != -1) question.setAnalysis(cursor.getString(analysisIndex));
-
+                Question question = extractQuestionFromCursor(cursor);
                 wrongQuestions.add(question);
             } while (cursor.moveToNext());
         }
@@ -132,6 +119,107 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.close();
         return wrongQuestions;
     }
+
+    // 获取所有错题（按错误次数降序排列）
+    public List<Question> getAllWrongQuestionsByWrongCount() {
+        List<Question> wrongQuestions = new ArrayList<>();
+        SQLiteDatabase db = this.getReadableDatabase();
+
+        String query = "SELECT * FROM " + TABLE_WRONG_QUESTIONS +
+                " ORDER BY " + COLUMN_WRONG_COUNT + " DESC, " + COLUMN_WRONG_TIME + " DESC";
+        Cursor cursor = db.rawQuery(query, null);
+
+        if (cursor.moveToFirst()) {
+            do {
+                Question question = extractQuestionFromCursor(cursor);
+                wrongQuestions.add(question);
+            } while (cursor.moveToNext());
+        }
+
+        cursor.close();
+        db.close();
+        return wrongQuestions;
+    }
+
+    // 按关键字搜索错题
+    public List<Question> searchWrongQuestions(String keyword) {
+        List<Question> wrongQuestions = new ArrayList<>();
+        SQLiteDatabase db = this.getReadableDatabase();
+
+        String query = "SELECT * FROM " + TABLE_WRONG_QUESTIONS +
+                " WHERE " + COLUMN_CONTENT + " LIKE ? OR " + COLUMN_ANALYSIS + " LIKE ?" +
+                " ORDER BY " + COLUMN_WRONG_COUNT + " DESC, " + COLUMN_WRONG_TIME + " DESC";
+
+        String searchKeyword = "%" + keyword + "%";
+        Cursor cursor = db.rawQuery(query, new String[]{searchKeyword, searchKeyword});
+
+        if (cursor.moveToFirst()) {
+            do {
+                Question question = extractQuestionFromCursor(cursor);
+                wrongQuestions.add(question);
+            } while (cursor.moveToNext());
+        }
+
+        cursor.close();
+        db.close();
+        return wrongQuestions;
+    }
+
+    // 从Cursor中提取Question对象的辅助方法
+    private Question extractQuestionFromCursor(Cursor cursor) {
+        Question question = new Question();
+
+        int questionIdIndex = cursor.getColumnIndex(COLUMN_QUESTION_ID);
+        int typeIndex = cursor.getColumnIndex(COLUMN_TYPE);
+        int contentIndex = cursor.getColumnIndex(COLUMN_CONTENT);
+        int optionsIndex = cursor.getColumnIndex(COLUMN_OPTIONS);
+        int answersIndex = cursor.getColumnIndex(COLUMN_ANSWERS);
+        int analysisIndex = cursor.getColumnIndex(COLUMN_ANALYSIS);
+        int wrongTimeIndex = cursor.getColumnIndex(COLUMN_WRONG_TIME);
+        int wrongCountIndex = cursor.getColumnIndex(COLUMN_WRONG_COUNT);
+
+        if (questionIdIndex != -1) question.setId(cursor.getString(questionIdIndex));
+        if (typeIndex != -1) question.setType(cursor.getString(typeIndex));
+        if (contentIndex != -1) question.setContent(cursor.getString(contentIndex));
+        if (optionsIndex != -1) question.setOptions(stringToList(cursor.getString(optionsIndex)));
+        if (answersIndex != -1) question.setAnswers(stringToList(cursor.getString(answersIndex)));
+        if (analysisIndex != -1) question.setAnalysis(cursor.getString(analysisIndex));
+
+        // 设置错题相关属性
+        if (wrongTimeIndex != -1) question.setWrongTime(cursor.getLong(wrongTimeIndex));
+        if (wrongCountIndex != -1) question.setWrongCount(cursor.getInt(wrongCountIndex));
+
+        return question;
+    }
+
+    // 获取错题统计信息
+    public Map<String, Integer> getWrongQuestionStats() {
+        Map<String, Integer> stats = new HashMap<>();
+        SQLiteDatabase db = this.getReadableDatabase();
+
+        // 获取总错题数
+        Cursor cursor = db.rawQuery("SELECT COUNT(*) FROM " + TABLE_WRONG_QUESTIONS, null);
+        if (cursor.moveToFirst()) {
+            stats.put("total", cursor.getInt(0));
+        }
+        cursor.close();
+
+        // 获取总错误次数
+        cursor = db.rawQuery("SELECT SUM(" + COLUMN_WRONG_COUNT + ") FROM " + TABLE_WRONG_QUESTIONS, null);
+        if (cursor.moveToFirst()) {
+            int totalWrongCount = cursor.getInt(0);
+            stats.put("totalWrongCount", totalWrongCount);
+        } else {
+            stats.put("totalWrongCount", 0);
+        }
+        cursor.close();
+
+        db.close();
+        return stats;
+    }
+
+
+
 
     // 在 DatabaseHelper.java 中修复 addWrongQuestion 方法
     public long addWrongQuestion(Question question, String paperId) {

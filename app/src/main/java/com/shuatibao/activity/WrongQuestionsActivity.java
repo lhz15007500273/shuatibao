@@ -1,35 +1,50 @@
 package com.shuatibao.activity;
 
+import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
+
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
 import com.shuatibao.R;
 import com.shuatibao.database.DatabaseHelper;
 import com.shuatibao.model.Question;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class WrongQuestionsActivity extends AppCompatActivity {
 
     private RecyclerView recyclerView;
-    private TextView tvEmpty;
-    private Button btnClearAll;
+    private TextView tvEmpty, tvStats;
+    private TextView tvClearAll; // 改为 TextView
+    private Button btnSortByTime, btnSortByCount;
+    private EditText etSearch;
+    private ImageView ivClearSearch;
     private WrongQuestionAdapter adapter;
     private DatabaseHelper databaseHelper;
     private List<Question> wrongQuestions;
+    private List<Question> filteredQuestions;
 
     private static final String TAG = "WrongQuestionsActivity";
+    private static final int SORT_BY_TIME = 0;
+    private static final int SORT_BY_COUNT = 1;
+    private int currentSortMode = SORT_BY_TIME;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,44 +56,83 @@ public class WrongQuestionsActivity extends AppCompatActivity {
         databaseHelper = new DatabaseHelper(this);
         initViews();
         loadWrongQuestions();
+        updateStats();
     }
 
+    @SuppressLint("WrongViewCast")
     private void initViews() {
         try {
             // 设置返回按钮
             View ivBack = findViewById(R.id.iv_back);
             if (ivBack != null) {
                 ivBack.setOnClickListener(v -> finish());
-            } else {
-                Log.e(TAG, "返回按钮未找到");
             }
 
-            // 清空错题本按钮
-            btnClearAll = findViewById(R.id.btn_clear_all);
-            if (btnClearAll != null) {
-                btnClearAll.setOnClickListener(v -> showClearAllDialog());
-            } else {
-                Log.e(TAG, "清空按钮未找到");
+            // 搜索框
+            etSearch = findViewById(R.id.et_search);
+            ivClearSearch = findViewById(R.id.iv_clear_search);
+
+            if (etSearch != null) {
+                etSearch.addTextChangedListener(new TextWatcher() {
+                    @Override
+                    public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+                    @Override
+                    public void onTextChanged(CharSequence s, int start, int before, int count) {
+                        searchQuestions(s.toString());
+                    }
+
+                    @Override
+                    public void afterTextChanged(Editable s) {}
+                });
+            }
+
+            if (ivClearSearch != null) {
+                ivClearSearch.setOnClickListener(v -> {
+                    if (etSearch != null) {
+                        etSearch.setText("");
+                    }
+                });
+            }
+
+            if (btnSortByTime != null) {
+                btnSortByTime.setOnClickListener(v -> {
+                    currentSortMode = SORT_BY_TIME;
+                    updateSortButtons();
+                    loadWrongQuestions();
+                });
+            }
+
+            if (btnSortByCount != null) {
+                btnSortByCount.setOnClickListener(v -> {
+                    currentSortMode = SORT_BY_COUNT;
+                    updateSortButtons();
+                    loadWrongQuestions();
+                });
+            }
+
+            // 清空错题本按钮 - 改为 TextView
+            tvClearAll = findViewById(R.id.tv_clear_all); // ID 需要对应修改
+            if (tvClearAll != null) {
+                tvClearAll.setOnClickListener(v -> showClearAllDialog());
             }
 
             recyclerView = findViewById(R.id.rv_wrong_questions);
             tvEmpty = findViewById(R.id.tv_empty);
+            tvStats = findViewById(R.id.tv_stats);
 
             if (recyclerView == null) {
                 Log.e(TAG, "RecyclerView未找到");
                 return;
             }
 
-            if (tvEmpty == null) {
-                Log.e(TAG, "空状态TextView未找到");
-                return;
-            }
-
             recyclerView.setLayoutManager(new LinearLayoutManager(this));
             wrongQuestions = new ArrayList<>();
-            adapter = new WrongQuestionAdapter(wrongQuestions);
+            filteredQuestions = new ArrayList<>();
+            adapter = new WrongQuestionAdapter(filteredQuestions);
             recyclerView.setAdapter(adapter);
 
+            updateSortButtons();
             Log.d(TAG, "界面初始化完成");
         } catch (Exception e) {
             Log.e(TAG, "初始化界面失败: " + e.getMessage(), e);
@@ -86,12 +140,31 @@ public class WrongQuestionsActivity extends AppCompatActivity {
         }
     }
 
+    private void updateSortButtons() {
+        if (btnSortByTime != null) {
+            btnSortByTime.setSelected(currentSortMode == SORT_BY_TIME);
+        }
+        if (btnSortByCount != null) {
+            btnSortByCount.setSelected(currentSortMode == SORT_BY_COUNT);
+        }
+    }
+
     private void loadWrongQuestions() {
         try {
-            Log.d(TAG, "开始加载错题数据");
+            Log.d(TAG, "开始加载错题数据，排序模式: " + currentSortMode);
+
             wrongQuestions.clear();
-            List<Question> questions = databaseHelper.getAllWrongQuestions();
+            List<Question> questions;
+
+            if (currentSortMode == SORT_BY_TIME) {
+                questions = databaseHelper.getAllWrongQuestions(); // 按时间倒序
+            } else {
+                questions = databaseHelper.getAllWrongQuestionsByWrongCount(); // 按错误次数倒序
+            }
+
             wrongQuestions.addAll(questions);
+            filteredQuestions.clear();
+            filteredQuestions.addAll(wrongQuestions);
 
             Log.d(TAG, "加载到错题数量: " + wrongQuestions.size());
 
@@ -99,31 +172,71 @@ public class WrongQuestionsActivity extends AppCompatActivity {
                 adapter.notifyDataSetChanged();
             }
 
-            // 显示/隐藏空状态
-            if (wrongQuestions.isEmpty()) {
-                if (tvEmpty != null) {
-                    tvEmpty.setVisibility(View.VISIBLE);
-                }
-                if (recyclerView != null) {
-                    recyclerView.setVisibility(View.GONE);
-                }
-                if (btnClearAll != null) {
-                    btnClearAll.setVisibility(View.GONE);
-                }
-            } else {
-                if (tvEmpty != null) {
-                    tvEmpty.setVisibility(View.GONE);
-                }
-                if (recyclerView != null) {
-                    recyclerView.setVisibility(View.VISIBLE);
-                }
-                if (btnClearAll != null) {
-                    btnClearAll.setVisibility(View.VISIBLE);
-                }
-            }
+            updateEmptyState();
+            updateStats();
+
         } catch (Exception e) {
             Log.e(TAG, "加载错题数据失败: " + e.getMessage(), e);
             Toast.makeText(this, "加载错题失败", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void searchQuestions(String keyword) {
+        try {
+            filteredQuestions.clear();
+
+            if (keyword.isEmpty()) {
+                filteredQuestions.addAll(wrongQuestions);
+            } else {
+                List<Question> searchResults = databaseHelper.searchWrongQuestions(keyword);
+                filteredQuestions.addAll(searchResults);
+            }
+
+            if (adapter != null) {
+                adapter.notifyDataSetChanged();
+            }
+
+            updateEmptyState();
+
+        } catch (Exception e) {
+            Log.e(TAG, "搜索错题失败: " + e.getMessage(), e);
+        }
+    }
+
+    private void updateStats() {
+        if (tvStats != null) {
+            Map<String, Integer> stats = databaseHelper.getWrongQuestionStats();
+            int totalQuestions = stats.getOrDefault("total", 0);
+            int totalWrongCount = stats.getOrDefault("totalWrongCount", 0);
+
+            String statsText = String.format("共%d道错题 • 累计错误%d次", totalQuestions, totalWrongCount);
+            tvStats.setText(statsText);
+        }
+    }
+
+    private void updateEmptyState() {
+        boolean isEmpty = filteredQuestions.isEmpty();
+
+        if (tvEmpty != null) {
+            if (isEmpty) {
+                String searchText = etSearch != null ? etSearch.getText().toString() : "";
+                if (!searchText.isEmpty()) {
+                    tvEmpty.setText("未找到包含 \"" + searchText + "\" 的错题");
+                } else {
+                    tvEmpty.setText("暂无错题\n答错的题目会自动添加到错题本");
+                }
+                tvEmpty.setVisibility(View.VISIBLE);
+            } else {
+                tvEmpty.setVisibility(View.GONE);
+            }
+        }
+
+        if (recyclerView != null) {
+            recyclerView.setVisibility(isEmpty ? View.GONE : View.VISIBLE);
+        }
+
+        if (tvClearAll != null) {
+            tvClearAll.setVisibility(isEmpty ? View.GONE : View.VISIBLE);
         }
     }
 
@@ -160,7 +273,6 @@ public class WrongQuestionsActivity extends AppCompatActivity {
                 return new ViewHolder(view);
             } catch (Exception e) {
                 Log.e(TAG, "创建ViewHolder失败: " + e.getMessage(), e);
-                // 创建一个简单的备选布局
                 TextView textView = new TextView(parent.getContext());
                 textView.setLayoutParams(new ViewGroup.LayoutParams(
                         ViewGroup.LayoutParams.MATCH_PARENT,
@@ -190,9 +302,15 @@ public class WrongQuestionsActivity extends AppCompatActivity {
                     holder.tvQuestionContent.setText(content != null ? content : "题目内容为空");
                 }
 
-                // 设置题目类型
+                // 设置题目类型和错误信息
                 if (holder.tvQuestionType != null) {
-                    holder.tvQuestionType.setText(question.getTypeName());
+                    String typeInfo = question.getTypeName() + " • 错误" + question.getWrongCount() + "次";
+                    holder.tvQuestionType.setText(typeInfo);
+                }
+
+                // 显示错误时间
+                if (holder.tvWrongTime != null) {
+                    holder.tvWrongTime.setText(question.getFormattedWrongTime());
                 }
 
                 // 显示正确答案
@@ -224,7 +342,6 @@ public class WrongQuestionsActivity extends AppCompatActivity {
 
                 // 点击重做题目
                 holder.itemView.setOnClickListener(v -> {
-                    // 跳转到练习页面，只练习这道错题
                     startPracticeWithSingleQuestion(question);
                 });
 
@@ -244,7 +361,7 @@ public class WrongQuestionsActivity extends AppCompatActivity {
         }
 
         class ViewHolder extends RecyclerView.ViewHolder {
-            TextView tvQuestionContent, tvQuestionType, tvCorrectAnswer, tvAnalysis;
+            TextView tvQuestionContent, tvQuestionType, tvCorrectAnswer, tvAnalysis, tvWrongTime;
 
             ViewHolder(View itemView) {
                 super(itemView);
@@ -253,6 +370,7 @@ public class WrongQuestionsActivity extends AppCompatActivity {
                     tvQuestionType = itemView.findViewById(R.id.tv_question_type);
                     tvCorrectAnswer = itemView.findViewById(R.id.tv_correct_answer);
                     tvAnalysis = itemView.findViewById(R.id.tv_analysis);
+                    tvWrongTime = itemView.findViewById(R.id.tv_wrong_time);
                 } catch (Exception e) {
                     Log.e(TAG, "初始化ViewHolder视图失败: " + e.getMessage(), e);
                 }
@@ -261,28 +379,20 @@ public class WrongQuestionsActivity extends AppCompatActivity {
     }
 
     /**
-     * 启动练习页面，只练习单个题目 - 修复版
-     */
-    // 在 WrongQuestionsActivity.java 中修改启动方法
-    /**
-     * 启动练习页面，只练习单个题目 - 使用 startActivityForResult
+     * 启动练习页面，只练习单个题目
      */
     private void startPracticeWithSingleQuestion(Question question) {
         try {
             Log.d(TAG, "启动单个题目练习");
 
-            // 创建只包含这道题目的列表
             ArrayList<Question> singleQuestionList = new ArrayList<>();
             singleQuestionList.add(question);
 
             Intent intent = new Intent(WrongQuestionsActivity.this, PracticeActivity.class);
-
-            // 使用 Serializable 传递题目列表
             intent.putExtra("question_list", singleQuestionList);
             intent.putExtra("from_wrong_questions", true);
             intent.putExtra("single_question_mode", true);
 
-            // 使用 startActivityForResult 来接收练习结果
             startActivityForResult(intent, REQUEST_CODE_PRACTICE);
             Log.d(TAG, "成功启动练习页面");
 
@@ -292,25 +402,21 @@ public class WrongQuestionsActivity extends AppCompatActivity {
         }
     }
 
-    // 添加请求码常量
     private static final int REQUEST_CODE_PRACTICE = 1001;
 
-    // 添加 onActivityResult 方法处理返回结果
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
         if (requestCode == REQUEST_CODE_PRACTICE) {
-            // 如果练习页面返回 RESULT_OK，说明有题目被移出错题本，需要刷新列表
             if (resultCode == RESULT_OK) {
                 Log.d(TAG, "检测到题目已从错题本移除，刷新列表");
                 loadWrongQuestions();
-
-                // 显示提示信息
                 Toast.makeText(this, "题目已从错题本移除", Toast.LENGTH_SHORT).show();
             }
         }
     }
+
     private void showDeleteDialog(Question question, int position) {
         new AlertDialog.Builder(this)
                 .setTitle("删除错题")
@@ -319,9 +425,12 @@ public class WrongQuestionsActivity extends AppCompatActivity {
                     try {
                         int result = databaseHelper.removeWrongQuestion(question.getId());
                         if (result > 0) {
-                            wrongQuestions.remove(position);
+                            // 从两个列表中都要删除
+                            wrongQuestions.remove(question);
+                            filteredQuestions.remove(question);
                             adapter.notifyItemRemoved(position);
-                            loadWrongQuestions(); // 重新检查空状态
+                            updateEmptyState();
+                            updateStats();
                             Toast.makeText(this, "删除成功", Toast.LENGTH_SHORT).show();
                         }
                     } catch (Exception e) {
@@ -336,7 +445,6 @@ public class WrongQuestionsActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        // 重新加载数据，确保显示最新状态
         loadWrongQuestions();
     }
 }

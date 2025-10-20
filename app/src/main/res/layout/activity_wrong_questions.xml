@@ -37,20 +37,97 @@
                 android:textSize="18sp"
                 android:textStyle="bold" />
 
-            <Button
-                android:id="@+id/btn_clear_all"
+            <!-- 将 Button 改为 TextView -->
+            <TextView
+                android:id="@+id/tv_clear_all"
                 android:layout_width="wrap_content"
-                android:layout_height="48dp"
+                android:layout_height="wrap_content"
                 android:layout_alignParentEnd="true"
                 android:layout_centerVertical="true"
-                android:background="@drawable/bg_button_outline"
+                android:padding="12dp"
                 android:text="清空"
                 android:textColor="@color/error"
-                android:textSize="14sp" />
+                android:textSize="14sp"
+                android:clickable="true"
+                android:focusable="true"
+                android:background="?attr/selectableItemBackground" />
 
         </RelativeLayout>
 
     </com.google.android.material.card.MaterialCardView>
+
+    <!-- 统计信息 -->
+    <TextView
+        android:id="@+id/tv_stats"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginBottom="8dp"
+        android:text="共0道错题 • 累计错误0次"
+        android:textColor="@color/text_secondary"
+        android:textSize="14sp" />
+
+    <!-- 搜索栏 -->
+    <com.google.android.material.card.MaterialCardView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="8dp"
+        android:layout_marginBottom="8dp"
+        app:cardCornerRadius="12dp"
+        app:cardElevation="1dp">
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:paddingHorizontal="16dp">
+
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:layout_centerVertical="true"
+                android:src="@drawable/ic_search"
+                android:contentDescription="搜索"
+                app:tint="@color/text_secondary" />
+
+            <EditText
+                android:id="@+id/et_search"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginStart="32dp"
+                android:layout_marginEnd="32dp"
+                android:background="@null"
+                android:hint="搜索错题..."
+                android:imeOptions="actionSearch"
+                android:maxLines="1"
+                android:paddingVertical="12dp"
+                android:textColor="@color/text_primary"
+                android:textColorHint="@color/text_secondary" />
+
+            <ImageView
+                android:id="@+id/iv_clear_search"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
+                android:src="@drawable/ic_close"
+                android:contentDescription="清除搜索"
+                android:visibility="gone"
+                app:tint="@color/text_secondary" />
+
+        </RelativeLayout>
+
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- 排序选项 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="8dp"
+        android:layout_marginBottom="8dp"
+        android:orientation="horizontal"
+        android:gravity="center">
+
+    </LinearLayout>
 
     <!-- 空状态提示 -->
     <TextView
