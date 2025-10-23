@@ -31,6 +31,11 @@ public class CreateQuestionActivity extends AppCompatActivity {
     private String[] questionTypes = {"单选题", "多选题", "判断题", "填空题", "简答题"};
     private String[] questionTypeValues = {"single_choice", "multiple_choice", "judgment", "fill_blank", "essay"};
 
+    // 用于存储关键组件的引用
+    private EditText etQuestionContent;
+    private EditText etAnalysis;
+    private LinearLayout llBlankAnswersContainer; // 用于存储多个空的答案输入框
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -132,6 +137,9 @@ public class CreateQuestionActivity extends AppCompatActivity {
 
     private void updateQuestionTemplate(String questionType) {
         llQuestionContainer.removeAllViews();
+        etQuestionContent = null;
+        etAnalysis = null;
+        llBlankAnswersContainer = null;
 
         switch (questionType) {
             case "single_choice":
@@ -155,8 +163,8 @@ public class CreateQuestionActivity extends AppCompatActivity {
     // 单选题模板
     private void createSingleChoiceTemplate() {
         // 题目内容
-        EditText etContent = createEditText("请输入试题内容");
-        llQuestionContainer.addView(etContent);
+        etQuestionContent = createEditText("请输入试题内容");
+        llQuestionContainer.addView(etQuestionContent);
 
         // 选项标题
         TextView tvOptionsTitle = new TextView(this);
@@ -214,15 +222,15 @@ public class CreateQuestionActivity extends AppCompatActivity {
         llQuestionContainer.addView(answerSpinner);
 
         // 解析
-        EditText etAnalysis = createEditText("题目解析（可选）");
+        etAnalysis = createEditText("题目解析（可选）");
         llQuestionContainer.addView(etAnalysis);
     }
 
     // 多选题模板
     private void createMultipleChoiceTemplate() {
         // 题目内容
-        EditText etContent = createEditText("请输入题目内容");
-        llQuestionContainer.addView(etContent);
+        etQuestionContent = createEditText("请输入题目内容");
+        llQuestionContainer.addView(etQuestionContent);
 
         // 选项标题
         TextView tvOptionsTitle = new TextView(this);
@@ -275,7 +283,7 @@ public class CreateQuestionActivity extends AppCompatActivity {
         llQuestionContainer.addView(etCorrectAnswers);
 
         // 解析
-        EditText etAnalysis = createEditText("题目解析（可选）");
+        etAnalysis = createEditText("题目解析（可选）");
         llQuestionContainer.addView(etAnalysis);
     }
 
@@ -385,11 +393,11 @@ public class CreateQuestionActivity extends AppCompatActivity {
         }
     }
 
-    // 判断题模板（保持不变）
+    // 判断题模板
     private void createJudgmentTemplate() {
         // 题目内容
-        EditText etContent = createEditText("请输入题目内容");
-        llQuestionContainer.addView(etContent);
+        etQuestionContent = createEditText("请输入题目内容");
+        llQuestionContainer.addView(etQuestionContent);
 
         // 正确答案
         TextView tvCorrectAnswer = new TextView(this);
@@ -410,38 +418,125 @@ public class CreateQuestionActivity extends AppCompatActivity {
         llQuestionContainer.addView(answerSpinner);
 
         // 解析
-        EditText etAnalysis = createEditText("题目解析（可选）");
+        etAnalysis = createEditText("题目解析（可选）");
         llQuestionContainer.addView(etAnalysis);
     }
 
-    // 填空题模板（保持不变）
+    // 填空题模板 - 修改为支持多个空
     private void createFillBlankTemplate() {
         // 题目内容（包含下划线表示填空位置）
         TextView tvContentHint = new TextView(this);
-        tvContentHint.setText("题目内容（用下划线_表示填空位置，例如：中国的首都是______）");
+        tvContentHint.setText("题目内容（用下划线_表示填空位置，例如：中国的首都是______，人口约______）");
         tvContentHint.setTextColor(getColor(R.color.text_secondary));
         tvContentHint.setTextSize(14);
         tvContentHint.setPadding(0, 0, 0, 8);
         llQuestionContainer.addView(tvContentHint);
 
-        EditText etContent = createEditText("请输入题目内容，用_表示填空");
-        llQuestionContainer.addView(etContent);
+        etQuestionContent = createEditText("请输入题目内容，用_表示填空");
+        llQuestionContainer.addView(etQuestionContent);
 
-        // 正确答案
-        EditText etCorrectAnswer = createEditText("正确答案");
-        etCorrectAnswer.setTag("correct_answer");
-        llQuestionContainer.addView(etCorrectAnswer);
+        // 创建空的答案容器
+        llBlankAnswersContainer = new LinearLayout(this);
+        llBlankAnswersContainer.setOrientation(LinearLayout.VERTICAL);
+        llBlankAnswersContainer.setLayoutParams(new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        ));
+        llBlankAnswersContainer.setTag("blank_answers_container");
+        llQuestionContainer.addView(llBlankAnswersContainer);
+
+        // 添加第一个空的答案输入框
+        addBlankAnswerField(1);
+
+        // 添加更多空的按钮
+        Button btnAddBlank = new Button(this);
+        btnAddBlank.setText("+添加填空");
+        btnAddBlank.setOnClickListener(v -> addNewBlankField());
+        LinearLayout.LayoutParams btnParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        btnParams.bottomMargin = dpToPx(16);
+        btnAddBlank.setLayoutParams(btnParams);
+        llQuestionContainer.addView(btnAddBlank);
 
         // 解析
-        EditText etAnalysis = createEditText("题目解析（可选）");
+        etAnalysis = createEditText("题目解析（可选）");
         llQuestionContainer.addView(etAnalysis);
     }
 
-    // 简答题模板（保持不变）
+    // 添加空的答案输入框
+    private void addBlankAnswerField(int blankNumber) {
+        LinearLayout blankLayout = new LinearLayout(this);
+        blankLayout.setOrientation(LinearLayout.VERTICAL);
+        blankLayout.setLayoutParams(new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        ));
+
+        // 空的标签
+        TextView tvBlankLabel = new TextView(this);
+        tvBlankLabel.setText("第" + blankNumber + "空答案：");
+        tvBlankLabel.setTextColor(getColor(R.color.text_primary));
+        tvBlankLabel.setTextSize(14);
+        tvBlankLabel.setPadding(0, 8, 0, 4);
+        blankLayout.addView(tvBlankLabel);
+
+        // 空的答案输入框
+        EditText etBlankAnswer = createEditText("请输入第" + blankNumber + "空答案");
+        etBlankAnswer.setTag("blank_answer_" + blankNumber);
+        blankLayout.addView(etBlankAnswer);
+
+        // 删除按钮（只有第2个及以后的空才有删除按钮）
+        if (blankNumber > 1) {
+            Button btnDeleteBlank = new Button(this);
+            btnDeleteBlank.setText("删除此空");
+            btnDeleteBlank.setTextColor(getColor(R.color.error));
+            btnDeleteBlank.setBackgroundColor(getColor(android.R.color.transparent));
+            btnDeleteBlank.setOnClickListener(v -> {
+                llBlankAnswersContainer.removeView(blankLayout);
+                updateBlankNumbers();
+            });
+            LinearLayout.LayoutParams deleteParams = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+            );
+            deleteParams.topMargin = dpToPx(4);
+            btnDeleteBlank.setLayoutParams(deleteParams);
+            blankLayout.addView(btnDeleteBlank);
+        }
+
+        llBlankAnswersContainer.addView(blankLayout);
+    }
+
+    // 添加新的空字段
+    private void addNewBlankField() {
+        int currentBlankCount = llBlankAnswersContainer.getChildCount();
+        addBlankAnswerField(currentBlankCount + 1);
+    }
+
+    // 更新空的编号
+    private void updateBlankNumbers() {
+        for (int i = 0; i < llBlankAnswersContainer.getChildCount(); i++) {
+            View child = llBlankAnswersContainer.getChildAt(i);
+            if (child instanceof LinearLayout) {
+                LinearLayout blankLayout = (LinearLayout) child;
+                TextView tvLabel = (TextView) blankLayout.getChildAt(0);
+                EditText etAnswer = (EditText) blankLayout.getChildAt(1);
+
+                int blankNumber = i + 1;
+                tvLabel.setText("第" + blankNumber + "空答案：");
+                etAnswer.setHint("请输入第" + blankNumber + "空答案");
+                etAnswer.setTag("blank_answer_" + blankNumber);
+            }
+        }
+    }
+
+    // 简答题模板
     private void createEssayTemplate() {
         // 题目内容
-        EditText etContent = createEditText("请输入题目内容");
-        llQuestionContainer.addView(etContent);
+        etQuestionContent = createEditText("请输入题目内容");
+        llQuestionContainer.addView(etQuestionContent);
 
         // 参考答案
         TextView tvAnswerHint = new TextView(this);
@@ -458,7 +553,7 @@ public class CreateQuestionActivity extends AppCompatActivity {
         llQuestionContainer.addView(etReferenceAnswer);
 
         // 解析
-        EditText etAnalysis = createEditText("题目解析（可选）");
+        etAnalysis = createEditText("题目解析（可选）");
         etAnalysis.setMinLines(2);
         llQuestionContainer.addView(etAnalysis);
     }
@@ -498,10 +593,13 @@ public class CreateQuestionActivity extends AppCompatActivity {
     }
 
     private Question createQuestionFromInputs(String questionType) {
-        // 获取题目内容（第一个EditText）
-        EditText etContent = (EditText) llQuestionContainer.getChildAt(0);
-        String content = etContent.getText().toString().trim();
+        // 使用存储的引用获取题目内容，而不是通过索引
+        if (etQuestionContent == null) {
+            Toast.makeText(this, "题目内容输入框未初始化", Toast.LENGTH_SHORT).show();
+            return null;
+        }
 
+        String content = etQuestionContent.getText().toString().trim();
         if (TextUtils.isEmpty(content)) {
             Toast.makeText(this, "请输入题目内容", Toast.LENGTH_SHORT).show();
             return null;
@@ -525,8 +623,6 @@ public class CreateQuestionActivity extends AppCompatActivity {
                     String selectedAnswer = (String) answerSpinner.getSelectedItem();
                     answers.add(selectedAnswer);
                 }
-                // 获取解析（最后一个EditText）
-                analysis = getAnalysisFromLastEditText();
                 break;
 
             case "multiple_choice":
@@ -549,8 +645,6 @@ public class CreateQuestionActivity extends AppCompatActivity {
                         answers.add(answer.trim());
                     }
                 }
-                // 获取解析（最后一个EditText）
-                analysis = getAnalysisFromLastEditText();
                 break;
 
             case "judgment":
@@ -560,23 +654,15 @@ public class CreateQuestionActivity extends AppCompatActivity {
                     String judgmentAnswer = (String) judgmentSpinner.getSelectedItem();
                     answers.add(judgmentAnswer);
                 }
-                // 获取解析（最后一个EditText）
-                analysis = getAnalysisFromLastEditText();
                 break;
 
             case "fill_blank":
-                // 获取正确答案
-                EditText etCorrectAnswer = findCorrectAnswerEditText();
-                if (etCorrectAnswer != null) {
-                    String fillAnswer = etCorrectAnswer.getText().toString().trim();
-                    if (TextUtils.isEmpty(fillAnswer)) {
-                        Toast.makeText(this, "请输入正确答案", Toast.LENGTH_SHORT).show();
-                        return null;
-                    }
-                    answers.add(fillAnswer);
+                // 获取所有空的答案
+                answers = collectBlankAnswers();
+                if (answers.isEmpty()) {
+                    Toast.makeText(this, "请至少填写一个空的答案", Toast.LENGTH_SHORT).show();
+                    return null;
                 }
-                // 获取解析（最后一个EditText）
-                analysis = getAnalysisFromLastEditText();
                 break;
 
             case "essay":
@@ -590,9 +676,12 @@ public class CreateQuestionActivity extends AppCompatActivity {
                     }
                     answers.add(referenceAnswer);
                 }
-                // 获取解析（最后一个EditText）
-                analysis = getAnalysisFromLastEditText();
                 break;
+        }
+
+        // 获取解析
+        if (etAnalysis != null) {
+            analysis = etAnalysis.getText().toString().trim();
         }
 
         // 创建题目对象
@@ -600,6 +689,27 @@ public class CreateQuestionActivity extends AppCompatActivity {
         question.setId(System.currentTimeMillis() + "_custom_" + currentQuestionIndex);
 
         return question;
+    }
+
+    // 收集所有空的答案
+    private List<String> collectBlankAnswers() {
+        List<String> blankAnswers = new ArrayList<>();
+        if (llBlankAnswersContainer == null) {
+            return blankAnswers;
+        }
+
+        for (int i = 0; i < llBlankAnswersContainer.getChildCount(); i++) {
+            View child = llBlankAnswersContainer.getChildAt(i);
+            if (child instanceof LinearLayout) {
+                LinearLayout blankLayout = (LinearLayout) child;
+                EditText etAnswer = (EditText) blankLayout.getChildAt(1); // 第二个子view是答案输入框
+                String answer = etAnswer.getText().toString().trim();
+                if (!TextUtils.isEmpty(answer)) {
+                    blankAnswers.add(answer);
+                }
+            }
+        }
+        return blankAnswers;
     }
 
     // 收集所有选项（格式：A. 内容）
@@ -647,17 +757,6 @@ public class CreateQuestionActivity extends AppCompatActivity {
         return null;
     }
 
-    // 查找填空题答案输入框
-    private EditText findCorrectAnswerEditText() {
-        for (int i = 0; i < llQuestionContainer.getChildCount(); i++) {
-            View child = llQuestionContainer.getChildAt(i);
-            if (child instanceof EditText && "correct_answer".equals(child.getTag())) {
-                return (EditText) child;
-            }
-        }
-        return null;
-    }
-
     // 查找简答题参考答案输入框
     private EditText findReferenceAnswerEditText() {
         for (int i = 0; i < llQuestionContainer.getChildCount(); i++) {
@@ -669,23 +768,6 @@ public class CreateQuestionActivity extends AppCompatActivity {
         return null;
     }
 
-    // 从最后一个EditText获取解析
-    private String getAnalysisFromLastEditText() {
-        for (int i = llQuestionContainer.getChildCount() - 1; i >= 0; i--) {
-            View child = llQuestionContainer.getChildAt(i);
-            if (child instanceof EditText) {
-                EditText etAnalysis = (EditText) child;
-                // 排除答案输入框
-                if (!"correct_answers".equals(etAnalysis.getTag()) &&
-                        !"correct_answer".equals(etAnalysis.getTag()) &&
-                        !"reference_answer".equals(etAnalysis.getTag())) {
-                    return etAnalysis.getText().toString().trim();
-                }
-            }
-        }
-        return "";
-    }
-
     private void clearQuestionInputs() {
         for (int i = 0; i < llQuestionContainer.getChildCount(); i++) {
             View child = llQuestionContainer.getChildAt(i);
@@ -694,6 +776,11 @@ public class CreateQuestionActivity extends AppCompatActivity {
             } else if (child instanceof Spinner) {
                 ((Spinner) child).setSelection(0);
             }
+        }
+        // 清空填空题的答案容器
+        if (llBlankAnswersContainer != null) {
+            llBlankAnswersContainer.removeAllViews();
+            addBlankAnswerField(1); // 重新添加第一个空
         }
     }
 

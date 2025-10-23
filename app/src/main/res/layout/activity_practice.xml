@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
@@ -28,6 +29,7 @@
                 app:tint="@color/text_primary" />
 
             <TextView
+                android:id="@+id/tv_title"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_centerInParent="true"
@@ -35,6 +37,24 @@
                 android:textColor="@color/text_primary"
                 android:textSize="18sp"
                 android:textStyle="bold" />
+
+            <!-- 答题卡按钮 - 改为 TextView -->
+            <TextView
+                android:id="@+id/btn_answer_sheet"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
+                android:background="?attr/selectableItemBackground"
+                android:clickable="true"
+                android:focusable="true"
+                android:paddingHorizontal="12dp"
+                android:paddingVertical="8dp"
+                android:text="答题卡"
+                android:textColor="@color/primary"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                tools:ignore="TouchTargetSizeCheck" />
 
         </RelativeLayout>
 
@@ -125,8 +145,6 @@
 
                 </LinearLayout>
 
-                <!-- 在选项区域添加判断题和填空题的布局 -->
-
                 <!-- 判断题选项 -->
                 <LinearLayout
                     android:id="@+id/ll_judgment_options"
@@ -190,7 +208,41 @@
                         android:singleLine="true" />
 
                 </LinearLayout>
-                <!-- 结果区域 -->
+
+                <!-- 简答题输入 -->
+                <LinearLayout
+                    android:id="@+id/ll_essay_input"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:orientation="vertical"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="请在下方输入答案："
+                        android:textColor="@color/text_secondary"
+                        android:textSize="14sp"
+                        android:layout_marginBottom="8dp" />
+
+                    <EditText
+                        android:id="@+id/et_essay"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:minHeight="120dp"
+                        android:background="@drawable/bg_edit_text"
+                        android:padding="12dp"
+                        android:textSize="16sp"
+                        android:gravity="top"
+                        android:hint="请输入详细答案..."
+                        android:inputType="textMultiLine"
+                        android:singleLine="false"
+                        android:maxLines="8"
+                        android:scrollbars="vertical" />
+
+                </LinearLayout>
+
                 <!-- 结果区域 -->
                 <LinearLayout
                     android:id="@+id/ll_result"
@@ -235,7 +287,7 @@
 
     </com.google.android.material.card.MaterialCardView>
 
-    <!-- 底部按钮 -->
+    <!-- 底部按钮 - 移除了提交答案按钮 -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -251,17 +303,6 @@
             android:background="@drawable/bg_button_outline"
             android:text="上一题"
             android:textColor="@color/primary" />
-
-        <Button
-            android:id="@+id/btn_submit"
-            android:layout_width="0dp"
-            android:layout_height="48dp"
-            android:layout_weight="1"
-            android:layout_marginStart="8dp"
-            android:layout_marginEnd="8dp"
-            android:backgroundTint="@color/primary"
-            android:text="提交答案"
-            android:textColor="@color/white" />
 
         <Button
             android:id="@+id/btn_next"
